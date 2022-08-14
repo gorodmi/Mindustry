@@ -1669,5 +1669,34 @@ public class LExecutor{
         }
     }
 
+    public static class SetPropI implements LInstruction{
+        public int target;
+        public int type;
+        public int p;
+
+        public SetPropI(int type, int target, int p){
+            this.type = type;
+            this.target = target;
+            this.p = p;
+        }
+
+        SetPropI(){}
+
+        @Override
+        public void run(LExecutor exec){
+            Object obj = exec.obj(target);
+            Object sense = exec.obj(type);
+
+            if(obj instanceof SetProppable s) {
+                if (sense instanceof LAccess access) {
+                    s.setProp(access, exec.num(p));
+                    s.setPropObject(access, exec.obj(p));
+                } else if (sense instanceof Content content) {
+                    s.setProp(content, exec.num(p));
+                }
+            }
+        }
+    }
+
     //endregion
 }
