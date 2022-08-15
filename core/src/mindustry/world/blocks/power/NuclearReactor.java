@@ -128,12 +128,6 @@ public class NuclearReactor extends PowerGenerator{
         }
 
         @Override
-        public void setProp(LAccess sensor, double value){
-            if(sensor == LAccess.heat) heat = (float)value;
-            else super.setProp(sensor, value);
-        }
-
-        @Override
         public void createExplosion(){
             if(items.get(fuelItem) >= 5 && heat >= 0.5f){
                 super.createExplosion();

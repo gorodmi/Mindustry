@@ -38,7 +38,7 @@ import java.util.*;
 
 import static mindustry.Vars.*;
 
-public class Block extends UnlockableContent implements Senseable, SetProppable{
+public class Block extends UnlockableContent implements Senseable{
     /** If true, buildings have an ItemModule. */
     public boolean hasItems;
     /** If true, buildings have a LiquidModule. */
@@ -1337,18 +1337,5 @@ public class Block extends UnlockableContent implements Senseable, SetProppable{
     public Object senseObject(LAccess sensor){
         if(sensor == LAccess.name) return name;
         return noSensed;
-    }
-
-    @Override
-    public void setProp(LAccess sensor, double value){
-        switch(sensor){
-            case health, maxHealth -> health = (int)value;
-            case size -> size = (int)(value / tilesize);
-            case itemCapacity -> itemCapacity = (int)value;
-            case liquidCapacity -> liquidCapacity = (int)value;
-            case powerCapacity -> {
-                if(consPower != null && consPower.buffered) consPower.capacity = (float)value;
-            }
-        }
     }
 }

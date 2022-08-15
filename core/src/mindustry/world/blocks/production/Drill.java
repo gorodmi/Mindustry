@@ -311,12 +311,6 @@ public class Drill extends Block{
         }
 
         @Override
-        public void setProp(LAccess sensor, double value){
-            if(sensor == LAccess.progress && dominantItem != null) progress = (float)(value * getDrillTime(dominantItem));
-            else super.setProp(sensor, value);
-        }
-
-        @Override
         public void drawCracks(){}
 
         public void drawDefaultCracks(){

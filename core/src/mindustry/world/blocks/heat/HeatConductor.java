@@ -7,7 +7,6 @@ import arc.util.*;
 import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
-import mindustry.logic.*;
 import mindustry.ui.*;
 import mindustry.world.*;
 import mindustry.world.draw.*;
@@ -48,7 +47,7 @@ public class HeatConductor extends Block{
         return drawer.finalIcons(this);
     }
 
-    public class HeatConductorBuild extends Building implements HeatBlock, HeatConsumer, Senseable, SetProppable{
+    public class HeatConductorBuild extends Building implements HeatBlock, HeatConsumer{
         public float heat = 0f;
         public float[] sideHeat = new float[4];
         public IntSet cameFrom = new IntSet();
@@ -92,18 +91,6 @@ public class HeatConductor extends Block{
         @Override
         public float heatFrac(){
             return heat / visualMaxHeat;
-        }
-
-        @Override
-        public double sense(LAccess sensor){
-            if(sensor == LAccess.heat) return heat;
-            return super.sense(sensor);
-        }
-
-        @Override
-        public void setProp(LAccess sensor, double value){
-            if(sensor == LAccess.heat) heat = (float)value;
-            else super.setProp(sensor, value);
         }
     }
 }

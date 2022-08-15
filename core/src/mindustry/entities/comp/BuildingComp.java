@@ -48,7 +48,7 @@ import static mindustry.Vars.*;
 
 @EntityDef(value = {Buildingc.class}, isFinal = false, genio = false, serialize = false)
 @Component(base = true)
-abstract class BuildingComp implements Posc, Teamc, Healthc, Buildingc, Timerc, QuadTreeObject, Displayable, Senseable, SetProppable, Controllable, Sized{
+abstract class BuildingComp implements Posc, Teamc, Healthc, Buildingc, Timerc, QuadTreeObject, Displayable, Senseable, Controllable, Sized{
     //region vars and initialization
     static final float timeToSleep = 60f * 1, recentDamageTime = 60f * 5f;
     static final ObjectSet<Building> tmpTiles = new ObjectSet<>();
@@ -1880,32 +1880,6 @@ abstract class BuildingComp implements Posc, Teamc, Healthc, Buildingc, Timerc, 
         if(content instanceof Item i && items != null) return items.get(i);
         if(content instanceof Liquid l && liquids != null) return liquids.get(l);
         return Float.NaN; //invalid sense
-    }
-
-    @Override
-    public void setProp(LAccess sensor, double value){
-        switch(sensor){
-            case x -> x = World.unconv((float)value);
-            case y -> y = World.unconv((float)value);
-            case dead -> { if (value == 1) heal(); else kill();}
-            case team -> team = Team.get((int)value);
-            case health -> health = (float)value;
-            case maxHealth -> maxHealth = (float)value;
-            case efficiency -> efficiency = (float)value;
-            case timescale -> timeScale = (float)value;
-            case rotation -> rotation = (int)value;
-            case totalPower -> {if (power != null && block.consPower != null) power.status = (float)(value / (block.consPower.buffered ? block.consPower.capacity : 1f));}
-            case itemCapacity -> {if (block.hasItems) block.itemCapacity = (int)value;}
-            case liquidCapacity -> {if (block.hasLiquids) block.liquidCapacity = (float)value;}
-            case powerCapacity -> {if (block.consPower != null) block.consPower.capacity = (float)value;}
-            case size -> block.size = (int)value;
-        };
-    }
-
-    @Override
-    public void setProp(Content content, double value){
-        if(content instanceof Item i && items != null) items.set(i, (int)value);
-        if(content instanceof Liquid l && liquids != null) liquids.reset(l, (float)value);
     }
 
     @Override
