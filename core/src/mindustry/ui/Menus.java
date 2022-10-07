@@ -43,6 +43,8 @@ public class Menus{
     public static void setHudText(String message){
         if(message == null) return;
 
+        // sus
+
         ui.hudfrag.setHudText(message);
     }
 
