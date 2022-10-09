@@ -43,8 +43,6 @@ public class Menus{
     public static void setHudText(String message){
         if(message == null) return;
 
-        // sus
-
         ui.hudfrag.setHudText(message);
     }
 
@@ -81,10 +79,10 @@ public class Menus{
     }
 
     @Remote(variants = Variant.both, unreliable = true)
-    public static void label(String message, float duration, float worldx, float worldy){
+    public static void label(String message, float duration, float worldx, float worldy, float scale){
         if(message == null) return;
 
-        ui.showLabel(message, duration, worldx, worldy);
+        ui.showLabel(message, duration, worldx, worldy, scale);
     }
 
     @Remote(variants = Variant.both)
@@ -95,8 +93,8 @@ public class Menus{
     }
 
     @Remote(variants = Variant.both)
-    public static void labelReliable(String message, float duration, float worldx, float worldy){
-        label(message, duration, worldx, worldy);
+    public static void labelReliable(String message, float duration, float worldx, float worldy, float scale){
+        label(message, duration, worldx, worldy, scale);
     }
 
     @Remote(variants = Variant.both)
