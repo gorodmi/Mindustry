@@ -2,6 +2,7 @@ package mindustry.entities;
 
 import arc.*;
 import arc.func.*;
+import arc.math.*;
 import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
@@ -71,9 +72,15 @@ public class EntityGroup<T extends Entityc> implements Iterable<T>{
         collisions.updatePhysics((EntityGroup<? extends Hitboxc>)this);
     }
 
+    public boolean updatable(T entity) {
+        if (!(entity instanceof Posc pos)) return true;
+        return Groups.player.find(p -> Mathf.dst2(pos.x(), pos.y(), p.x(), p.y()) <= updateDistance * updateDistance) != null;
+    }
+
     public void update(){
         for(index = 0; index < array.size; index++){
-            array.items[index].update();
+            T item = array.items[index];
+            if (updatable(item)) item.update();
         }
     }
 

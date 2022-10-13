@@ -37,7 +37,7 @@ public class NetServer implements ApplicationListener{
     /** note that snapshots are compressed, so the max snapshot size here is above the typical UDP safe limit */
     private static final int maxSnapshotSize = 800;
     private static final int timerBlockSync = 0, timerHealthSync = 1;
-    private static final float blockSyncTime = 60 * 6, healthSyncTime = 30;
+    private static final float blockSyncTime = 5, healthSyncTime = 30;
     private static final FloatBuffer fbuffer = FloatBuffer.allocate(20);
     private static final Writes dataWrites = new Writes(null);
     private static final IntSeq hiddenIds = new IntSeq();
@@ -45,6 +45,7 @@ public class NetServer implements ApplicationListener{
     private static final Vec2 vector = new Vec2();
     /** If a player goes away of their server-side coordinates by this distance, they get teleported back. */
     private static final float correctDist = tilesize * 14f;
+    private static final ObjectMap<Player, ObjectSet<Tile>> tileVisible = new ObjectMap<>();
 
     public Administration admins = new Administration();
     public CommandHandler clientCommands = new CommandHandler("/");
@@ -556,6 +557,7 @@ public class NetServer implements ApplicationListener{
 
         if(!player.con.hasDisconnected){
             if(player.con.hasConnected){
+                tileVisible.remove(player);
                 Events.fire(new PlayerLeave(player));
                 if(Config.showConnectMessages.bool()) Call.sendMessage("[accent]" + player.name + "[accent] has disconnected.");
                 Call.playerDisconnect(player.id());
@@ -832,6 +834,8 @@ public class NetServer implements ApplicationListener{
             player.sendMessage(Config.motd.string());
         }
 
+        tileVisible.put(player, new ObjectSet<>());
+
         Events.fire(new PlayerJoin(player));
     }
 
@@ -901,7 +905,7 @@ public class NetServer implements ApplicationListener{
 
         short sent = 0;
         for(Building entity : Groups.build){
-            if(!entity.block.sync) continue;
+            if(!Groups.build.updatable(entity)) continue;
             sent++;
 
             dataStream.writeInt(entity.pos());
@@ -920,6 +924,34 @@ public class NetServer implements ApplicationListener{
             dataStream.close();
             Call.blockSnapshot(sent, syncStream.toByteArray());
         }
+
+        Groups.player.each(p -> {
+            Tile tile = p.tileOn();
+            if (tile == null) return;
+            ObjectSet<Tile> visible = tileVisible.get(p);
+            ObjectSet<Tile> newVisible = new ObjectSet<>();
+            tile.circle(tileUpdateDistance, t -> {
+                newVisible.add(t);
+                if (!visible.contains(t)) sendFakeBlock(p.con, t, false);
+                visible.remove(t);
+            });
+            visible.each(t -> sendFakeBlock(p.con, t, true));
+            visible.clear();
+            visible.addAll(newVisible);
+        });
+    }
+
+    public void sendFakeBlock(NetConnection con, Tile tile, boolean empty) {
+        SetFloorCallPacket floorPacket = new SetFloorCallPacket();
+        SetTileCallPacket tilePacket = new SetTileCallPacket();
+        floorPacket.tile = tilePacket.tile = tile;
+        floorPacket.floor = empty ? Blocks.space : tile.floor();
+        floorPacket.overlay = empty ? Blocks.air : tile.overlay();
+        tilePacket.block = empty ? Blocks.air : tile.block();
+        tilePacket.team = empty ? Team.derelict : tile.team();
+        tilePacket.rotation = empty || tile.build == null ? 0 : tile.build.rotation();
+        con.send(floorPacket, false);
+        if (tile.isCenter()) con.send(tilePacket, false);
     }
 
     public void writeEntitySnapshot(Player player) throws IOException{
@@ -951,6 +983,7 @@ public class NetServer implements ApplicationListener{
 
         for(Syncc entity : Groups.sync){
             //TODO write to special list
+            if(!Groups.sync.updatable(entity)) continue;
             if(entity.isSyncHidden(player)){
                 hiddenIds.add(entity.id());
                 continue;

@@ -188,66 +188,20 @@ public abstract class SaveVersion extends SaveFileReader{
 
         //floor + overlay
         for(int i = 0; i < world.width() * world.height(); i++){
-            Tile tile = world.rawTile(i % world.width(), i / world.width());
-            stream.writeShort(tile.floorID());
-            stream.writeShort(tile.overlayID());
-            int consecutives = 0;
-
-            for(int j = i + 1; j < world.width() * world.height() && consecutives < 255; j++){
-                Tile nextTile = world.rawTile(j % world.width(), j / world.width());
-
-                if(nextTile.floorID() != tile.floorID() || nextTile.overlayID() != tile.overlayID()){
-                    break;
-                }
-
-                consecutives++;
-            }
-
+            stream.writeShort(Blocks.space.id);
+            stream.writeShort(Blocks.air.id);
+            int consecutives = Math.min(world.width() * world.height() - i, 256) - 1;
             stream.writeByte(consecutives);
             i += consecutives;
         }
 
         //blocks
         for(int i = 0; i < world.width() * world.height(); i++){
-            Tile tile = world.rawTile(i % world.width(), i / world.width());
-            stream.writeShort(tile.blockID());
-
-            boolean savedata = tile.block().saveData;
-            byte packed = (byte)((tile.build != null ? 1 : 0) | (savedata ? 2 : 0));
-
-            //make note of whether there was an entity/rotation here
-            stream.writeByte(packed);
-
-            //only write the entity for multiblocks once - in the center
-            if(tile.build != null){
-                if(tile.isCenter()){
-                    stream.writeBoolean(true);
-                    writeChunk(stream, true, out -> {
-                        out.writeByte(tile.build.version());
-                        tile.build.writeAll(Writes.get(out));
-                    });
-                }else{
-                    stream.writeBoolean(false);
-                }
-            }else if(savedata){
-                stream.writeByte(tile.data);
-            }else{
-                //write consecutive non-entity blocks
-                int consecutives = 0;
-
-                for(int j = i + 1; j < world.width() * world.height() && consecutives < 255; j++){
-                    Tile nextTile = world.rawTile(j % world.width(), j / world.width());
-
-                    if(nextTile.blockID() != tile.blockID()){
-                        break;
-                    }
-
-                    consecutives++;
-                }
-
-                stream.writeByte(consecutives);
-                i += consecutives;
-            }
+            stream.writeShort(Blocks.air.id);
+            stream.writeByte(0);
+            int consecutives = Math.min(world.width() * world.height() - i, 256) - 1;
+            stream.writeByte(consecutives);
+            i += consecutives;
         }
     }
 
