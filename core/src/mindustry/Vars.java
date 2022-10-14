@@ -210,8 +210,9 @@ public class Vars implements Loadable{
     /** path to the java executable */
     public static String javaPath;
     /** used for factions */
-    public static int tileUpdateDistance = 20;
-    public static int updateDistance = tileUpdateDistance * tilesize;
+    public static int tileChunkDistance = 30;
+    public static int chunkDistance = tileChunkDistance * tilesize;
+    public static boolean chunkReliable = true;
 
     /** list of all locales that can be switched to */
     public static Locale[] locales;

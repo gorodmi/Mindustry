@@ -45,7 +45,25 @@ public class NetServer implements ApplicationListener{
     private static final Vec2 vector = new Vec2();
     /** If a player goes away of their server-side coordinates by this distance, they get teleported back. */
     private static final float correctDist = tilesize * 14f;
-    private static final ObjectMap<Player, ObjectSet<Tile>> tileVisible = new ObjectMap<>();
+
+    private final ObjectSet<Tile> chunkVisible = new ObjectSet<>();
+    private final Thread chunkThread = Threads.thread("tileVisible", () -> {
+        Events.run(Trigger.update, () -> {
+            Groups.player.each(p -> {
+                Tile tile = p.tileOn();
+                if (tile == null) return;
+                ObjectSet<Tile> newVisible = new ObjectSet<>();
+                tile.circle(tileChunkDistance, t -> {
+                    if (!chunkVisible.contains(t)) sendFakeBlock(t, false);
+                    chunkVisible.remove(t);
+                    newVisible.add(t);
+                });
+                chunkVisible.each(t -> sendFakeBlock(t, true));
+                chunkVisible.clear();
+                chunkVisible.addAll(newVisible);
+            });
+        });
+    });
 
     public Administration admins = new Administration();
     public CommandHandler clientCommands = new CommandHandler("/");
@@ -290,6 +308,8 @@ public class NetServer implements ApplicationListener{
         });
 
         registerCommands();
+
+        if (chunkThread.getState() == Thread.State.NEW) chunkThread.start();
     }
 
     @Override
@@ -557,7 +577,6 @@ public class NetServer implements ApplicationListener{
 
         if(!player.con.hasDisconnected){
             if(player.con.hasConnected){
-                tileVisible.remove(player);
                 Events.fire(new PlayerLeave(player));
                 if(Config.showConnectMessages.bool()) Call.sendMessage("[accent]" + player.name + "[accent] has disconnected.");
                 Call.playerDisconnect(player.id());
@@ -834,8 +853,6 @@ public class NetServer implements ApplicationListener{
             player.sendMessage(Config.motd.string());
         }
 
-        tileVisible.put(player, new ObjectSet<>());
-
         Events.fire(new PlayerJoin(player));
     }
 
@@ -924,24 +941,9 @@ public class NetServer implements ApplicationListener{
             dataStream.close();
             Call.blockSnapshot(sent, syncStream.toByteArray());
         }
-
-        Groups.player.each(p -> {
-            Tile tile = p.tileOn();
-            if (tile == null) return;
-            ObjectSet<Tile> visible = tileVisible.get(p);
-            ObjectSet<Tile> newVisible = new ObjectSet<>();
-            tile.circle(tileUpdateDistance, t -> {
-                newVisible.add(t);
-                if (!visible.contains(t)) sendFakeBlock(p.con, t, false);
-                visible.remove(t);
-            });
-            visible.each(t -> sendFakeBlock(p.con, t, true));
-            visible.clear();
-            visible.addAll(newVisible);
-        });
     }
 
-    public void sendFakeBlock(NetConnection con, Tile tile, boolean empty) {
+    public static void sendFakeBlock(Tile tile, boolean empty) {
         SetFloorCallPacket floorPacket = new SetFloorCallPacket();
         SetTileCallPacket tilePacket = new SetTileCallPacket();
         floorPacket.tile = tilePacket.tile = tile;
@@ -950,8 +952,8 @@ public class NetServer implements ApplicationListener{
         tilePacket.block = empty ? Blocks.air : tile.block();
         tilePacket.team = empty ? Team.derelict : tile.team();
         tilePacket.rotation = empty || tile.build == null ? 0 : tile.build.rotation();
-        con.send(floorPacket, false);
-        if (tile.isCenter()) con.send(tilePacket, false);
+        net.send(floorPacket, chunkReliable);
+        if (tile.isCenter()) net.send(tilePacket, chunkReliable);
     }
 
     public void writeEntitySnapshot(Player player) throws IOException{

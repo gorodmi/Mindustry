@@ -74,7 +74,7 @@ public class EntityGroup<T extends Entityc> implements Iterable<T>{
 
     public boolean updatable(T entity) {
         if (!(entity instanceof Posc pos)) return true;
-        return Groups.player.find(p -> Mathf.dst2(pos.x(), pos.y(), p.x(), p.y()) <= updateDistance * updateDistance) != null;
+        return Groups.player.find(p -> Mathf.dst2(pos.x(), pos.y(), p.x(), p.y()) <= chunkDistance * chunkDistance) != null;
     }
 
     public void update(){
