@@ -25,16 +25,16 @@ public class BranchTreeLayout implements TreeLayout{
         secondWalk(root, -root.prelim, 0, 0);
     }
 
-    private float getWidthOrHeightOfNode(TreeNode treeNode, boolean returnWidth){
-        return returnWidth ? treeNode.calcWidth() : treeNode.height;
+    private float getWidthOrHeightOfNode(TreeNode treeNode, int depth, boolean returnWidth){
+        return returnWidth ? treeNode.calcWidth(depth) : treeNode.height;
     }
 
-    private float getNodeThickness(TreeNode treeNode){
-        return getWidthOrHeightOfNode(treeNode, !isLevelChangeInYAxis());
+    private float getNodeThickness(TreeNode treeNode, int depth){
+        return getWidthOrHeightOfNode(treeNode, depth, !isLevelChangeInYAxis());
     }
 
-    private float getNodeSize(TreeNode treeNode){
-        return getWidthOrHeightOfNode(treeNode, isLevelChangeInYAxis());
+    private float getNodeSize(TreeNode treeNode, int depth){
+        return getWidthOrHeightOfNode(treeNode, depth, isLevelChangeInYAxis());
     }
 
     private boolean isLevelChangeInYAxis(){
@@ -79,7 +79,7 @@ public class BranchTreeLayout implements TreeLayout{
             oldSize = sizeOfLevel.get(level);
         }
 
-        float size = getNodeThickness(node);
+        float size = getNodeThickness(node, node.depth());
         if(oldSize < size){
             sizeOfLevel.set(level, size);
         }
@@ -111,7 +111,8 @@ public class BranchTreeLayout implements TreeLayout{
     }
 
     private float getDistance(TreeNode v, TreeNode w){
-        float sizeOfNodes = getNodeSize(v) + getNodeSize(w);
+        int level = Math.min(v.depth(), w.depth()) + 1;
+        float sizeOfNodes = getNodeSize(v, level) + getNodeSize(w, level);
 
         return sizeOfNodes / 2 + getGapBetweenNodes(v, w);
     }
@@ -254,9 +255,9 @@ public class BranchTreeLayout implements TreeLayout{
         if(alignment == TreeAlignment.center){
             y = levelStart + levelChangeSign * (levelSize / 2);
         }else if(alignment == TreeAlignment.towardsRoot){
-            y = levelStart + levelChangeSign * (getNodeThickness(v) / 2);
+            y = levelStart + levelChangeSign * (getNodeThickness(v, v.depth()) / 2);
         }else{
-            y = levelStart + levelSize - levelChangeSign * (getNodeThickness(v) / 2);
+            y = levelStart + levelSize - levelChangeSign * (getNodeThickness(v, v.depth()) / 2);
         }
 
         if(!levelChangeOnYAxis){
